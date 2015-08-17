@@ -15,8 +15,10 @@ output: html_document
 6. Model building and accuracy/error metrics  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A. Quadratic Discriminant Analysis (QDA)  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;B. Random Forest
-7. Summary and submission score
-<br /><br />
+7. Summary and submission score  
+  
+**NOTE: All R code sections in this Rmd file have been set to "eval=FALSE" for brevity**  
+<br>
 
 #### **1. Background**
 
