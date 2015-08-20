@@ -1,8 +1,8 @@
 ---
 title: "Practical Machine Learning - Course Project - Writeup"
 author: "Stuart Ward"
-date: "August 17, 2015"
-output: html_document
+date: "August 20, 2015"
+output: pdf_document
 ---
 <br />
 
@@ -17,12 +17,11 @@ output: html_document
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;B. Random Forest
 7. Summary and submission score  
   
-**NOTE: All R code sections in this Rmd file have been set to "eval=FALSE" for brevity**  
 <br>
 
 #### **1. Background**
 
-Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).  
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self-movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).  
 <br>
 
 #### **2. Data**
@@ -49,7 +48,7 @@ Predict (in the testing dataset) the manner in which they did the exercise. This
 
 For this project, I utilized a method recommended by a Kaggle competition winner. The essence of the strategy is to get an initial model as quick as possible and utilize that as a benchmark and a data point for further improvements.  
 
-Two techniques to achieve this strategy are two find quick ways to simplify the data to only 'clean' rows/columns of data, and utilize a model that trains very quickly.  
+Two techniques to achieve this strategy are to (1) find quick ways to simplify the data to only 'clean' rows/columns of data, and (2) utilize a model that trains very quickly.  
 
 I also keep in mind the words of wisdom from **Nate Silver**, when asked about his tools/process: "I use Stata for anything hardcore and Excel for the rest."  
 <br>  
@@ -57,7 +56,7 @@ I also keep in mind the words of wisdom from **Nate Silver**, when asked about h
 #### **5. Initial data analysis and prep**
 
 Loading in the data
-```{r eval=FALSE}
+```{r}
 trainingFromFile <- read.csv("pml-training.csv")
 testingFromFile <- read.csv("pml-testing.csv")
 ```
@@ -67,14 +66,14 @@ Since this is the data we are going to make predictions on, we can easily see th
 
 These columns can be removed from both test and training sets since they will have no predictive power on the test set.
 
-```{r eval=FALSE}
+```{r}
 training <- trainingFromFile[,-c(12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,50,51,52,53,54,55,56,57,58,59,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,103,104,105,106,107,108,109,110,111,112,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,141,142,143,144,145,146,147,148,149,150)]
 testing <- testingFromFile[,-c(12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,50,51,52,53,54,55,56,57,58,59,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,103,104,105,106,107,108,109,110,111,112,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,141,142,143,144,145,146,147,148,149,150)]
 ```
 
 In addition, we can remove the initial 7 'bookkeeping' columns, (as well as the problem_id column from the testing data), since these would not be representative of a typical data set.
 
-```{r eval=FALSE}
+```{r}
 training <- training[,-c(1,2,3,4,5,6,7)]
 testing <- testing[,-c(1,2,3,4,5,6,7,60)]
 ```
@@ -82,52 +81,52 @@ testing <- testing[,-c(1,2,3,4,5,6,7,60)]
 
 #### **6. Model building and accuracy/error metrics**
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**A.** This is a large, dense, robust data set; which is a sign that we may not need to incur the performance and time costs that come with K-fold cross validation.
-The first model will utilize a simple hold-out validation set, consisting of a 70/30 random stratified split of the training data.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**A.** This is a large, dense, robust data set; which is a sign that we **may not need to incur the performance and time costs that come with K-fold cross validation**.
+The first model will utilize the cross validation method of a simple hold-out validation set, consisting of a 70/30 random stratified split of the training data.
 
-```{r eval=FALSE}
+```{r}
 library(caret)
 InTrain <- createDataPartition(y = training$classe, p=0.7, list=FALSE)
 trainingForModel <- training[InTrain,]
 trainingForValidation <- training[-InTrain,]
 ```
 
-QDA is known to be a fast training (surprisingly accurate) algorithm; this is the first model I'll train
-```{r eval=FALSE}
+QDA is known to be a fast training (and surprisingly accurate) algorithm; this is the first model I'll train
+```{r}
 library(MASS)
 ```
 
 Set start time to determine how long it takes to train the model
-```{r eval=FALSE}
+```{r}
 startTime <- Sys.time()
 ```
 
 Train the model on the 70% of the training data
-```{r eval=FALSE}
+```{r}
 qdaTrain <- qda(classe ~ ., data =  trainingForModel)
 ```
 
 Stop timer and report on training time
-```{r eval=FALSE}
+```{r}
 runTime <- Sys.time() - startTime
 runTime
 ```
 
 Predict using the model on the 30% of the training data
-```{r eval=FALSE}
+```{r}
 qdaPred <- predict(qdaTrain, newdata = trainingForValidation[,-53])
 ```
 
 Display the results of the predictions
-```{r eval=FALSE}
+```{r}
 confusionMatrix(qdaPred$class, trainingForValidation$classe)
 ```
 
 ***
 
-**Summary of <span style="color:red">QDA</span> model results (the process above was repeated several times to verify model stability)**   
-**- The time to train the model was 0.4 seconds**  
-**- The model accuracy was consistently around 90% (out of sample error = 10%)**
+**Summary of <span style="color:red">QDA</span> model results**   
+**- The time to train the model is less than one second**  
+**- The model accuracy is greater than 89% (out of sample error < 11%)**
 
 ***
 
@@ -135,42 +134,43 @@ Given the speed of training, the QDA model accuracy is quite high.
 <br>  
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**B.** Next, I utilize the Random Forest algorithm to see if it improves the model accuracy, yet still trains in a reasonable amount of time.
-```{r eval=FALSE}
+```{r}
 library(randomForest)
 ```
 
 Set start time to determine how long it takes to train the model
-```{r eval=FALSE}
+```{r}
 startTime <- Sys.time()
 ```
 
 Train the model on the 70% of the training data
-```{r eval=FALSE}
+```{r}
 rfTrain <- randomForest(classe ~ ., data = trainingForModel)
 ```
 
 Stop timer and report on training time
-```{r eval=FALSE}
+```{r}
 runTime <- Sys.time() - startTime
 runTime
 ```
 
 Predict using the model on the 30% of the training data
-```{r eval=FALSE}
+```{r}
 rfPred <- predict(rfTrain, newdata = trainingForValidation)
 ```
 
 Display the results of the predictions
-```{r eval=FALSE}
+```{r}
 confusionMatrix(rfPred, trainingForValidation$classe)
 ```
 
 ***
 
-**Summary of <span style="color:red">Random Forest</span> model results (the process above was repeated several times to verify model stability)**  
-**- The time to train the model was 30 seconds**  
-**- The model accuracy was consistently around 99.5% (out of sample error < 1%)**
-
+**Summary of <span style="color:red">Random Forest</span> model results**  
+**- The time to train the model is approximately 30 seconds**  
+**- The model accuracy is greater than 99% (out of sample error < 1%)**  
+**- The results confirm that _K-fold cross validation is not necessary_ to produce a highly accurate model. For this particular data set, utilizing the cross validation method of a simple random stratified split of the data is appropriate.**  
+  
 ***
 
 
@@ -179,8 +179,8 @@ The Random Forest model significantly improves accuracy and maintains reasonable
 
 #### **7. Summary and submission score**
 
-Utilizing a random forest model trained on all the training data, I predicted the results of the test data
-created the output files and submitted them with a results of **scoring 20 out of 20 correct** (see code below).
+Utilizing a random forest model trained on all the training data, I predicted the results of the test data, 
+created the output files. and submitted them with the results of **scoring 20 out of 20 correct** (see code below).
 
 ```{r eval=FALSE}
 rfTrain <- randomForest(classe ~ ., data = training)
@@ -198,6 +198,6 @@ pml_write_files(answers)
 
 
 The training data was such that very little preprocessing was necessary; 
-only a simple random stratified split of the training data was needed; 
+a cross validation method of a simple random stratified split of the training data was appropriate; 
 and no model tuning was necessary to achieve a predictive accuracy > 99%.
 <br><br>  
